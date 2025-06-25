@@ -21,9 +21,15 @@ def process_zip_file(zip_path):
         gif_filename = os.path.splitext(os.path.basename(zip_path))[0] + ".gif"
         gif_path = os.path.join(os.path.dirname(zip_path), gif_filename)
         
-        # 如果GIF已存在，跳过处理
+        # 如果GIF已存在，判断其大小
         if os.path.exists(gif_path):
-            return (zip_path, "skip", "对应的GIF已存在")
+            if os.path.getsize(gif_path) > 0:
+                return (zip_path, "skip", "对应的GIF已存在且非0KB")
+            else:
+                try:
+                    os.remove(gif_path)
+                except Exception as e:
+                    return (zip_path, "error", f"删除0KB GIF失败: {e}")
         
         # 从文件名提取时间间隔
         ms_duration = find_ms_in_filename(os.path.basename(zip_path))
@@ -149,4 +155,10 @@ def main():
     process_folder(args.folder, max_workers=args.workers)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n用户中断，正在清理并安全退出...")
+        # with tempfile.TemporaryDirectory 已自动清理临时文件夹，无需额外操作
+        # 如有其他资源需清理，可在此处添加
+        pass
